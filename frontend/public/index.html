@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Task Manager</title>
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 1rem;
+      background: #f5f5f5;
+      color: #333;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 1.5rem;
+    }
+
+    /* Banner for backend unavailable */
+    .banner {
+      display: none;
+      background: #d32f2f;
+      color: #fff;
+      padding: 0.75rem 1rem;
+      border-radius: 4px;
+      margin-bottom: 1rem;
+      text-align: center;
+      font-weight: 500;
+    }
+
+    .banner.visible {
+      display: block;
+    }
+
+    /* Toast notifications */
+    .toast-container {
+      position: fixed;
+      top: 1rem;
+      right: 1rem;
+      z-index: 1000;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .toast {
+      padding: 0.75rem 1rem;
+      border-radius: 4px;
+      color: #fff;
+      font-size: 0.9rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      animation: slideIn 0.3s ease;
+    }
+
+    .toast.success {
+      background: #388e3c;
+    }
+
+    .toast.error {
+      background: #d32f2f;
+    }
+
+    @keyframes slideIn {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+</style>
+  <style>
+    /* Form styles */
+    .task-form {
+      background: #fff;
+      padding: 1.25rem;
+      border-radius: 8px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+      margin-bottom: 1.5rem;
+    }
+
+    .task-form h2 {
+      margin-top: 0;
+      margin-bottom: 1rem;
+      font-size: 1.1rem;
+    }
+
+    .form-group {
+      margin-bottom: 0.75rem;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 0.25rem;
+      font-weight: 500;
+      font-size: 0.9rem;
+    }
+
+    .form-group input[type="text"],
+    .form-group textarea {
+      width: 100%;
+      padding: 0.5rem;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 0.95rem;
+      font-family: inherit;
+    }
+
+    .form-group textarea {
+      resize: vertical;
+      min-height: 60px;
+    }
+
+    .form-actions {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 0.75rem;
+    }
+
+    button {
+      padding: 0.5rem 1rem;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-family: inherit;
+    }
+
+    button:focus-visible {
+      outline: 2px solid #1976d2;
+      outline-offset: 2px;
+    }
+
+    .btn-primary {
+      background: #1976d2;
+      color: #fff;
+    }
+
+    .btn-primary:hover {
+      background: #1565c0;
+    }
+
+    .btn-secondary {
+      background: #757575;
+      color: #fff;
+    }
+
+    .btn-secondary:hover {
+      background: #616161;
+    }
+
+    .btn-danger {
+      background: #d32f2f;
+      color: #fff;
+    }
+
+    .btn-danger:hover {
+      background: #c62828;
+    }
+
+    .btn-small {
+      padding: 0.3rem 0.6rem;
+      font-size: 0.8rem;
+    }
+</style>
+  <style>
+    /* Task list styles */
+    .task-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .task-item {
+      background: #fff;
+      padding: 1rem;
+      border-radius: 8px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+    }
+
+    .task-item.completed .task-title {
+      text-decoration: line-through;
+      color: #888;
+    }
+
+    .task-checkbox {
+      margin-top: 0.2rem;
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+    }
+
+    .task-content {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .task-title {
+      font-weight: 600;
+      margin-bottom: 0.25rem;
+      word-break: break-word;
+    }
+
+    .task-description {
+      font-size: 0.85rem;
+      color: #666;
+      margin-bottom: 0.25rem;
+      word-break: break-word;
+    }
+
+    .task-date {
+      font-size: 0.75rem;
+      color: #999;
+    }
+
+    .task-actions {
+      display: flex;
+      gap: 0.35rem;
+      flex-shrink: 0;
+    }
+
+    .empty-state {
+      text-align: center;
+      color: #888;
+      padding: 2rem;
+      font-style: italic;
+    }
+
+    .loading {
+      text-align: center;
+      color: #666;
+      padding: 2rem;
+    }
+
+    /* Edit form inline */
+    .edit-form {
+      background: #fff;
+      padding: 1rem;
+      border-radius: 8px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+      margin-bottom: 0.75rem;
+      border: 2px solid #1976d2;
+    }
+
+    .edit-form .form-group {
+      margin-bottom: 0.5rem;
+    }
+  </style>
+</head>
+<body>
+  <h1>Task Manager</h1>
+
+  <div id="banner" class="banner" role="alert" aria-live="assertive">
+    Backend unavailable — please check your connection.
+  </div>
+
+  <div class="toast-container" id="toastContainer" aria-live="polite" aria-atomic="true"></div>
+
+  <!-- Create Task Form -->
+  <section class="task-form" aria-labelledby="create-heading">
+    <h2 id="create-heading">Add New Task</h2>
+    <form id="createForm" novalidate>
+      <div class="form-group">
+        <label for="newTitle">Title <span aria-hidden="true">*</span></label>
+        <input type="text" id="newTitle" name="title" required maxlength="255"
+               aria-required="true" placeholder="Enter task title">
+      </div>
+      <div class="form-group">
+        <label for="newDescription">Description</label>
+        <textarea id="newDescription" name="description" placeholder="Optional description"></textarea>
+      </div>
+      <div class="form-actions">
+        <button type="submit" class="btn-primary">Add Task</button>
+      </div>
+    </form>
+  </section>
+
+  <!-- Task List -->
+  <section aria-labelledby="list-heading">
+    <h2 id="list-heading">Tasks</h2>
+    <div id="taskListContainer">
+      <p class="loading">Loading tasks...</p>
+    </div>
+  </section>
+
+  <script src="config.js"></script>
+  <script>
+    (function() {
+      'use strict';
+
+      const API_BASE = window.API_BASE_URL || '/api';
+      const TIMEOUT_MS = 5000;
+
+      const banner = document.getElementById('banner');
+      const toastContainer = document.getElementById('toastContainer');
+      const createForm = document.getElementById('createForm');
+      const taskListContainer = document.getElementById('taskListContainer');
+
+      // --- Utility Functions ---
+
+      function showBanner() {
+        banner.classList.add('visible');
+        banner.textContent = 'Backend unavailable — please check your connection.';
+      }
+
+      function hideBanner() {
+        banner.classList.remove('visible');
+      }
+
+      function showToast(message, type) {
+        const toast = document.createElement('div');
+        toast.className = 'toast ' + type;
+        toast.setAttribute('role', 'status');
+        toast.textContent = message;
+        toastContainer.appendChild(toast);
+        setTimeout(function() {
+          toast.remove();
+        }, 3500);
+      }
+
+      function fetchWithTimeout(url, options) {
+        var controller = new AbortController();
+        var timeoutId = setTimeout(function() {
+          controller.abort();
+        }, TIMEOUT_MS);
+
+        options = options || {};
+        options.signal = controller.signal;
+
+        return fetch(url, options).then(function(response) {
+          clearTimeout(timeoutId);
+          hideBanner();
+          return response;
+        }).catch(function(err) {
+          clearTimeout(timeoutId);
+          if (err.name === 'AbortError') {
+            showBanner();
+            throw new Error('Backend unavailable');
+          }
+          showBanner();
+          throw err;
+        });
+      }
+
+      async function apiRequest(method, path, body) {
+        var url = API_BASE + path;
+        var options = {
+          method: method,
+          headers: {}
+        };
+
+        if (body !== undefined) {
+          options.headers['Content-Type'] = 'application/json';
+          options.body = JSON.stringify(body);
+        }
+
+        var response = await fetchWithTimeout(url, options);
+
+        if (!response.ok) {
+          var errorData;
+          try {
+            errorData = await response.json();
+          } catch (e) {
+            errorData = { error: 'Request failed with status ' + response.status };
+          }
+          throw { status: response.status, data: errorData };
+        }
+
+        if (response.status === 204) {
+          return null;
+        }
+
+        return response.json();
+      }
+
+      // --- CRUD Operations ---
+
+      async function loadTasks() {
+        try {
+          var tasks = await apiRequest('GET', '/tasks');
+          renderTaskList(tasks);
+        } catch (err) {
+          if (err && err.data) {
+            showToast(err.data.error || 'Failed to load tasks', 'error');
+          } else {
+            taskListContainer.innerHTML = '<p class="empty-state">Unable to load tasks. Backend may be unavailable.</p>';
+          }
+        }
+      }
+
+      async function createTask(title, description) {
+        var body = { title: title };
+        if (description) {
+          body.description = description;
+        }
+
+        try {
+          await apiRequest('POST', '/tasks', body);
+          showToast('Task created successfully', 'success');
+          createForm.reset();
+          await loadTasks();
+        } catch (err) {
+          if (err && err.data) {
+            showToast(err.data.error || 'Failed to create task', 'error');
+          } else {
+            showToast('Failed to create task', 'error');
+          }
+        }
+      }
+
+      async function updateTask(id, updates) {
+        try {
+          await apiRequest('PUT', '/tasks/' + id, updates);
+          showToast('Task updated successfully', 'success');
+          await loadTasks();
+        } catch (err) {
+          if (err && err.data) {
+            showToast(err.data.error || 'Failed to update task', 'error');
+          } else {
+            showToast('Failed to update task', 'error');
+          }
+        }
+      }
+
+      async function deleteTask(id) {
+        try {
+          await apiRequest('DELETE', '/tasks/' + id);
+          showToast('Task deleted successfully', 'success');
+          await loadTasks();
+        } catch (err) {
+          if (err && err.data) {
+            showToast(err.data.error || 'Failed to delete task', 'error');
+          } else {
+            showToast('Failed to delete task', 'error');
+          }
+        }
+      }
+
+      async function toggleComplete(id, completed) {
+        await updateTask(id, { completed: !completed });
+      }
+
+      // --- Rendering ---
+
+      function renderTaskList(tasks) {
+        if (!tasks || tasks.length === 0) {
+          taskListContainer.innerHTML = '<p class="empty-state">No tasks yet. Add one above!</p>';
+          return;
+        }
+
+        var ul = document.createElement('ul');
+        ul.className = 'task-list';
+        ul.setAttribute('aria-label', 'Task list');
+
+        tasks.forEach(function(task) {
+          var li = document.createElement('li');
+          li.className = 'task-item' + (task.completed ? ' completed' : '');
+          li.setAttribute('data-id', task.id);
+
+          var checkbox = document.createElement('input');
+          checkbox.type = 'checkbox';
+          checkbox.className = 'task-checkbox';
+          checkbox.checked = task.completed;
+          checkbox.setAttribute('aria-label', 'Mark "' + task.title + '" as ' + (task.completed ? 'incomplete' : 'complete'));
+          checkbox.addEventListener('change', function() {
+            toggleComplete(task.id, task.completed);
+          });
+
+          var content = document.createElement('div');
+          content.className = 'task-content';
+
+          var title = document.createElement('div');
+          title.className = 'task-title';
+          title.textContent = task.title;
+
+          content.appendChild(title);
+
+          if (task.description) {
+            var desc = document.createElement('div');
+            desc.className = 'task-description';
+            desc.textContent = task.description;
+            content.appendChild(desc);
+          }
+
+          if (task.created_at) {
+            var date = document.createElement('div');
+            date.className = 'task-date';
+            date.textContent = 'Created: ' + new Date(task.created_at).toLocaleString();
+            content.appendChild(date);
+          }
+
+          var actions = document.createElement('div');
+          actions.className = 'task-actions';
+
+          var editBtn = document.createElement('button');
+          editBtn.className = 'btn-primary btn-small';
+          editBtn.textContent = 'Edit';
+          editBtn.setAttribute('aria-label', 'Edit "' + task.title + '"');
+          editBtn.addEventListener('click', function() {
+            renderEditForm(task);
+          });
+
+          var deleteBtn = document.createElement('button');
+          deleteBtn.className = 'btn-danger btn-small';
+          deleteBtn.textContent = 'Delete';
+          deleteBtn.setAttribute('aria-label', 'Delete "' + task.title + '"');
+          deleteBtn.addEventListener('click', function() {
+            if (confirm('Delete task "' + task.title + '"?')) {
+              deleteTask(task.id);
+            }
+          });
+
+          actions.appendChild(editBtn);
+          actions.appendChild(deleteBtn);
+
+          li.appendChild(checkbox);
+          li.appendChild(content);
+          li.appendChild(actions);
+          ul.appendChild(li);
+        });
+
+        taskListContainer.innerHTML = '';
+        taskListContainer.appendChild(ul);
+      }
+
+      function renderEditForm(task) {
+        var existing = document.querySelector('.edit-form');
+        if (existing) existing.remove();
+
+        var form = document.createElement('div');
+        form.className = 'edit-form';
+        form.setAttribute('role', 'form');
+        form.setAttribute('aria-label', 'Edit task: ' + task.title);
+
+        form.innerHTML =
+          '<div class="form-group">' +
+            '<label for="editTitle-' + task.id + '">Title <span aria-hidden="true">*</span></label>' +
+            '<input type="text" id="editTitle-' + task.id + '" value="' + escapeHtml(task.title) + '" maxlength="255" aria-required="true">' +
+          '</div>' +
+          '<div class="form-group">' +
+            '<label for="editDesc-' + task.id + '">Description</label>' +
+            '<textarea id="editDesc-' + task.id + '">' + escapeHtml(task.description || '') + '</textarea>' +
+          '</div>' +
+          '<div class="form-actions">' +
+            '<button type="button" class="btn-primary" id="saveEdit-' + task.id + '">Save</button>' +
+            '<button type="button" class="btn-secondary" id="cancelEdit-' + task.id + '">Cancel</button>' +
+          '</div>';
+
+        var taskItem = document.querySelector('[data-id="' + task.id + '"]');
+        if (taskItem) {
+          taskItem.style.display = 'none';
+          taskItem.parentNode.insertBefore(form, taskItem);
+        } else {
+          taskListContainer.appendChild(form);
+        }
+
+        var titleInput = document.getElementById('editTitle-' + task.id);
+        titleInput.focus();
+
+        document.getElementById('saveEdit-' + task.id).addEventListener('click', function() {
+          var newTitle = titleInput.value.trim();
+          var newDesc = document.getElementById('editDesc-' + task.id).value;
+
+          if (!newTitle) {
+            showToast('Title is required', 'error');
+            titleInput.focus();
+            return;
+          }
+
+          var updates = { title: newTitle, description: newDesc };
+          form.remove();
+          if (taskItem) taskItem.style.display = '';
+          updateTask(task.id, updates);
+        });
+
+        document.getElementById('cancelEdit-' + task.id).addEventListener('click', function() {
+          form.remove();
+          if (taskItem) taskItem.style.display = '';
+        });
+      }
+
+      function escapeHtml(str) {
+        var div = document.createElement('div');
+        div.textContent = str;
+        return div.innerHTML;
+      }
+
+      // --- Event Handlers ---
+
+      createForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        var title = document.getElementById('newTitle').value.trim();
+        var description = document.getElementById('newDescription').value;
+
+        if (!title) {
+          showToast('Title is required', 'error');
+          document.getElementById('newTitle').focus();
+          return;
+        }
+
+        createTask(title, description);
+      });
+
+      // --- Initialize ---
+      loadTasks();
+    })();
+  </script>
+</body>
+</html>

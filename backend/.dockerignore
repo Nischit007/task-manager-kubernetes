@@ -1,0 +1,6 @@
+node_modules
+tests
+.git
+.gitignore
+vitest.config.js
+vitest.manifests.config.js
