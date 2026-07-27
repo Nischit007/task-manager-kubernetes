@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kubernetes Workshop - Deploy a Full-Stack App on K3s</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, sans-serif;
+      line-height: 1.6;
+      color: #1a1a2e;
+      background: #f8f9fa;
+      padding: 2rem 1rem;
+    }
+
+    .container {
+      max-width: 860px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      font-size: 2rem;
+      margin-bottom: 0.5rem;
+      color: #16213e;
+    }
+
+    h2 {
+      font-size: 1.5rem;
+      margin-bottom: 0.75rem;
+      color: #0f3460;
+    }
+
+    h3 {
+      font-size: 1.15rem;
+      margin-bottom: 0.5rem;
+      color: #16213e;
+    }
+
+    p {
+      margin-bottom: 1rem;
+    }
+
+    .intro {
+      background: #ffffff;
+      border: 1px solid #dee2e6;
+      border-radius: 8px;
+      padding: 2rem;
+      margin-bottom: 2rem;
+    }
+
+    .intro h1 {
+      border-bottom: 2px solid #0f3460;
+      padding-bottom: 0.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .goals {
+      margin-bottom: 1.5rem;
+    }
+
+    .goals ul, .prereqs ul {
+      margin-left: 1.5rem;
+      margin-top: 0.5rem;
+    }
+
+    .goals li, .prereqs li {
+      margin-bottom: 0.4rem;
+    }
+
+    .prereqs {
+      background: #e8f4fd;
+      border-left: 4px solid #0f3460;
+      padding: 1rem 1.25rem;
+      border-radius: 0 4px 4px 0;
+    }
+
+    .task {
+      background: #ffffff;
+      border: 1px solid #dee2e6;
+      border-radius: 8px;
+      padding: 1.75rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .task-header {
+      display: flex;
+      align-items: baseline;
+      gap: 0.75rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .task-number {
+      background: #0f3460;
+      color: #ffffff;
+      font-weight: 700;
+      font-size: 0.85rem;
+      padding: 0.2rem 0.6rem;
+      border-radius: 4px;
+      white-space: nowrap;
+    }
+
+    .task-description {
+      margin-bottom: 1rem;
+      color: #333;
+    }
+
+    pre {
+      background: #1a1a2e;
+      color: #e0e0e0;
+      padding: 1rem 1.25rem;
+      border-radius: 6px;
+      overflow-x: auto;
+      font-size: 0.875rem;
+      line-height: 1.5;
+      margin-bottom: 1rem;
+    }
+
+    code {
+      font-family: "SF Mono", "Fira Code", "Fira Mono", Menlo, Consolas, monospace;
+    }
+
+    .placeholder {
+      color: #ff6b6b;
+      font-weight: 600;
+    }
+
+    .hint-toggle {
+      background: none;
+      border: 1px solid #0f3460;
+      color: #0f3460;
+      padding: 0.4rem 0.9rem;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-weight: 500;
+      margin-right: 0.5rem;
+      margin-bottom: 0.5rem;
+      transition: background 0.2s, color 0.2s;
+    }
+
+    .hint-toggle:hover {
+      background: #0f3460;
+      color: #ffffff;
+    }
+
+    .hint-toggle:focus {
+      outline: 2px solid #0f3460;
+      outline-offset: 2px;
+    }
+
+    .hint-toggle[aria-expanded="true"] {
+      background: #0f3460;
+      color: #ffffff;
+    }
+
+    .hint-content {
+      display: none;
+      background: #fff8e1;
+      border-left: 4px solid #ffc107;
+      padding: 0.75rem 1rem;
+      border-radius: 0 4px 4px 0;
+      margin-top: 0.5rem;
+      margin-bottom: 0.5rem;
+      font-size: 0.9rem;
+    }
+
+    .hint-content.visible {
+      display: block;
+    }
+
+    .hints-section {
+      margin-top: 1rem;
+    }
+
+    .optional-badge {
+      background: #ffc107;
+      color: #1a1a2e;
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 0.15rem 0.5rem;
+      border-radius: 3px;
+      margin-left: 0.5rem;
+    }
+
+    .note {
+      background: #f1f8e9;
+      border-left: 4px solid #4caf50;
+      padding: 0.75rem 1rem;
+      border-radius: 0 4px 4px 0;
+      margin-bottom: 1rem;
+      font-size: 0.9rem;
+    }
+
+    footer {
+      text-align: center;
+      margin-top: 3rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid #dee2e6;
+      color: #6c757d;
+      font-size: 0.85rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Introduction Section -->
+    <section class="intro">
+      <h1>Kubernetes Workshop: Deploy a Full-Stack App on K3s</h1>
+      <div class="goals">
+        <h2>Workshop Goals</h2>
+        <p>In this workshop you will write Kubernetes manifests from scratch to deploy a full-stack CRUD application (Node.js backend, Nginx frontend, PostgreSQL database) on a K3s cluster. By the end you will understand:</p>
+        <ul>
+          <li>How to build and import container images into K3s</li>
+          <li>How to create Deployments to run containerized workloads</li>
+          <li>How to expose applications with Services (ClusterIP and NodePort)</li>
+          <li>How to configure Horizontal Pod Autoscalers for automatic scaling</li>
+          <li>How to provision persistent storage with PersistentVolumes and PersistentVolumeClaims</li>
+          <li>How Kubernetes resources depend on each other and how DNS-based service discovery works</li>
+        </ul>
+      </div>
+      <div class="prereqs">
+        <h3>Prerequisites</h3>
+        <ul>
+          <li>A running K3s cluster (single-node is fine)</li>
+          <li><code>kubectl</code> installed and configured to connect to your cluster (use <code>sudo kubectl</code> if permissions require it)</li>
+          <li>Container images built and imported into K3s:
+            <ul>
+              <li><code>sudo docker build -t workshop-backend:latest ./backend</code></li>
+              <li><code>sudo docker build -t workshop-frontend:latest ./frontend</code></li>
+              <li><code>sudo docker save workshop-backend:latest | sudo k3s ctr images import -</code></li>
+              <li><code>sudo docker save workshop-frontend:latest | sudo k3s ctr images import -</code></li>
+            </ul>
+          </li>
+          <li>Basic familiarity with YAML syntax</li>
+        </ul>
+      </div>
+      <div class="note">
+        <strong>Important:</strong> K3s uses containerd, not Docker. Images built with <code>docker build</code> must be imported into K3s with <code>docker save | k3s ctr images import</code>. All Deployments use <code>imagePullPolicy: Never</code> to prevent K3s from trying to pull from a remote registry.
+      </div>
+    </section>
+
+    <!-- Task 1: Backend Deployment -->
+    <section class="task">
+      <div class="task-header">
+        <span class="task-number">Task 1</span>
+        <h2>Backend Deployment</h2>
+      </div>
+      <p class="task-description">Create a Kubernetes <strong>Deployment</strong> resource for the <strong>backend</strong> (Node.js Express API) component. The Deployment ensures your backend container runs with the correct environment variables for database connectivity.</p>
+      <pre><code>apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  labels:
+    app: workshop
+    component: <span class="placeholder">&lt;COMPONENT_NAME&gt;</span>
+spec:
+  replicas: <span class="placeholder">&lt;REPLICA_COUNT&gt;</span>
+  selector:
+    matchLabels:
+      app: workshop
+      component: <span class="placeholder">&lt;COMPONENT_NAME&gt;</span>
+  template:
+    metadata:
+      labels:
+        app: workshop
+        component: <span class="placeholder">&lt;COMPONENT_NAME&gt;</span>
+    spec:
+      containers:
+        - name: backend
+          image: <span class="placeholder">&lt;IMAGE_NAME&gt;</span>
+          imagePullPolicy: Never
+          ports:
+            - containerPort: <span class="placeholder">&lt;PORT&gt;</span>
+              name: http
+          env:
+            - name: DB_HOST
+              value: <span class="placeholder">&lt;DATABASE_SERVICE_NAME&gt;</span>
+            - name: DB_PORT
+              value: "<span class="placeholder">&lt;DB_PORT&gt;</span>"
+            # Add remaining env vars: DB_NAME, DB_USER, DB_PASSWORD, PORT
+          resources:
+            requests:
+              cpu: <span class="placeholder">&lt;CPU_REQUEST&gt;</span>
+              memory: <span class="placeholder">&lt;MEM_REQUEST&gt;</span>
+            limits:
+              cpu: <span class="placeholder">&lt;CPU_LIMIT&gt;</span>
+              memory: <span class="placeholder">&lt;MEM_LIMIT&gt;</span></code></pre>
+      <div class="hints-section">
+        <button class="hint-toggle" aria-expanded="false" onclick="toggleHint(this)">Hint 1: Component label</button>
+        <div class="hint-content">The component label should be <code>backend</code> — this label is used to tie the Deployment, Service, and HPA together.</div>
+        <button class="hint-toggle" aria-expanded="false" onclick="toggleHint(this)">Hint 2: Image and port</button>
+        <div class="hint-content">Use <code>workshop-backend:latest</code> as the image. The Express server listens on port <code>3000</code> by default.</div>
+        <button class="hint-toggle" aria-expanded="false" onclick="toggleHint(this)">Hint 3: Database connection</button>
+        <div class="hint-content">Set <code>DB_HOST</code> to the name of the PostgreSQL Service you will create later (e.g. <code>postgres-service</code>). Set <code>DB_PORT</code> to <code>5432</code>.</div>
+        <button class="hint-toggle" aria-expanded="false" onclick="toggleHint(this)">Hint 4: imagePullPolicy</button>
+        <div class="hint-content"><code>imagePullPolicy: Never</code> tells K3s to use locally imported images instead of trying to pull from a remote registry. Always set this for images built and imported locally.</div>
+      </div>
+    </section>
+
+    <!-- Task 2: Backend Service (ClusterIP) -->
+    <section class="task">
+      <div class="task-header">
+        <span class="task-number">Task 2</span>
+        <h2>Backend Service (ClusterIP)</h2>
+      </div>
+      <p class="task-description">Create a <strong>Service</strong> resource of type <strong>ClusterIP</strong> for the <strong>backend</strong> component. This Service gives the backend a stable internal DNS name so the frontend can reach it within the cluster.</p>
+      <pre><code>apiVersion: v1
+kind: Service
+metadata:
+  name: <span class="placeholder">&lt;SERVICE_NAME&gt;</span>
+  labels:
+    app: workshop
+    component: backend
+spec:
+  type: <span class="placeholder">&lt;SERVICE_TYPE&gt;</span>
+  selector:
+    app: <span class="placeholder">&lt;???&gt;</span>
+    component: <span class="placeholder">&lt;???&gt;</span>
+  ports:
+    - name: http
+      port: <span class="placeholder">&lt;SERVICE_PORT&gt;</span>
+      targetPort: <span class="placeholder">&lt;TARGET_PORT_NAME&gt;</span>
+      protocol: TCP</code></pre>
+      <div class="hints-section">
+        <button class="hint-toggle" aria-expanded="false" onclick="toggleHint(this)">Hint 1: Service type</button>
+        <div class="hint-content">Use <code>ClusterIP</code> — this makes the service accessible only within the cluster. The frontend will proxy requests to it.</div>
+        <button class="hint-toggle" aria-expanded="false" onclick="toggleHint(this)">Hint 2: Selector labels</button>
+        <div class="hint-content">The selector must exactly match the pod template labels from your backend Deployment: <code>app: workshop</code> and <code>component: backend</code>.</div>
+        <button class="hint-toggle" aria-expanded="false" onclick="toggleHint(this)">Hint 3: Port mapping</button>
+        <div class="hint-content">Set <code>port: 3000</code> (the port the Service listens on) and <code>targetPort: http</code> (referencing the named port on the container).</div>
+      </div>
+    </section>
+
+    <!-- Task 3: Frontend Deployment -->
+    <section class="task">
+      <div class="task-header">
+        <span class="task-number">Task 3</span>
+        <h2>Frontend Deployment</h2>
+      </div>
+      <p class="task-description">Create a Kubernetes <strong>Deployment</strong> for the <strong>frontend</strong> component (Nginx serving static files). The frontend container needs an environment variable pointing to the backend service for API proxying.</p>
+      <pre><code>apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  labels:
+    app: workshop
+    component: <span class="placeholder">&lt;COMPONENT_NAME&gt;</span>
+spec:
+  replicas: <span class="placeholder">&lt;REPLICA_COUNT&gt;</span>
+  selector:
+    matchLabels:
+      app: workshop
+      component: <span class="placeholder">&lt;COMPONENT_NAME&gt;</span>
+  template:
+    metadata:
+      labels:
+        app: workshop
+        component: <span class="placeholder">&lt;COMPONENT_NAME&gt;</span>
+    spec:
+      containers:
+        - name: frontend
+          image: <span class="placeholder">&lt;IMAGE_NAME&gt;</span>
+          imagePullPolicy: Never
+          ports:
+            - containerPort: <span class="placeholder">&lt;PORT&gt;</span>
+              name: http
+          env:
+            - name: BACKEND_URL
+              value: <span class="placeholder">&lt;BACKEND_SERVICE_URL&gt;</span>
+          resources:
+            requests:
+              cpu: <span class="placeholder">&lt;CPU_REQUEST&gt;</span>
+              memory: <span class="placeholder">&lt;MEM_REQUEST&gt;</span>
+            limits:
+              cpu: <span class="placeholder">&lt;CPU_LIMIT&gt;</span>
+              memory: <span class="placeholder">&lt;MEM_LIMIT&gt;</span></code></pre>
+      <div class="hints-section">
+        <button class="hint-toggle" aria-expanded="false" onclick="toggleHint(this)">Hint 1: Image and port</button>
+        <div class="hint-content">Use <code>workshop-frontend:latest</code> as the image. Nginx listens on port <code>80</code>.</div>
+        <button class="hint-toggle" aria-expanded="false" onclick="toggleHint(this)">Hint 2: Backend URL</button>
+        <div class="hint-content">Set <code>BACKEND_URL</code> to the backend Service's full cluster DNS name: <code>http://backend-service.default.svc.cluster.local:3000</code>. The FQDN is required because the Nginx resolver doesn't use Kubernetes search domains.</div>
+      </div>
+    </section>
+
+    <!-- Task 4: Frontend Service (NodePort) -->
+    <section class="task">
+      <div class="task-header">
+        <span class="task-number">Task 4</span>
+        <h2>Frontend Service (NodePort)</h2>
+      </div>
+      <p class="task-description">Create a <strong>Service</strong> of type <strong>NodePort</strong> for the <strong>frontend</strong> component. This exposes the frontend on a fixed port on every cluster node so you can access it from your browser.</p>
+      <pre><code>apiVersion: v1
+kind: Service
+metadata:
+  name: <span class="placeholder">&lt;SERVICE_NAME&gt;</span>
+  labels:
+    app: workshop
+    component: frontend
+spec:
+  type: <span class="placeholder">&lt;SERVICE_TYPE&gt;</span>
+  selector:
+    app: <span class="placeholder">&lt;???&gt;</span>
+    component: <span class="placeholder">&lt;???&gt;</span>
+  ports:
+    - name: http
+      port: <span class="placeholder">&lt;SERVICE_PORT&gt;</span>
+      targetPort: <span class="placeholder">&lt;TARGET_PORT_NAME&gt;</span>
+      nodePort: <span class="placeholder">&lt;NODE_PORT&gt;</span>
+      protocol: TCP</code></pre>
+      <div class="hints-section">
+        <button class="hint-toggle" aria-expanded="false" onclick="toggleHint(this)">Hint 1: Service type and node port</button>
+        <div class="hint-content">Use type <code>NodePort</code>. Choose a port in the range 30000-32767. A good default is <code>30080</code>.</div>
+        <button class="hint-toggle" aria-expanded="false" onclick="toggleHint(this)">Hint 2: Port mapping</button>
+        <div class="hint-content">Set <code>port: 80</code> for the service port and <code>targetPort: http</code> to match the named port on the frontend container.</div>
+      </div>
+    </section>
+
+    <!-- Task 5: Database Deployment -->
+    <section class="task">
+      <div class="task-header">
+        <span class="task-number">Task 5</span>
+        <h2>Database Deployment</h2>
+      </div>
+      <p class="task-description">Create a <strong>Deployment</strong> for the <strong>PostgreSQL database</strong> component. This requires environment variables for initial database configuration, a volume mount for data persistence, and optionally an init script via ConfigMap.</p>
+      <pre><code>apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres
+  labels:
+    app: workshop
+    component: <span class="placeholder">&lt;COMPONENT_NAME&gt;</span>
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: workshop
+      component: <span class="placeholder">&lt;COMPONENT_NAME&gt;</span>
+  template:
+    metadata:
+      labels:
+        app: workshop
+        component: <span class="placeholder">&lt;COMPONENT_NAME&gt;</span>
+    spec:
+      containers:
+        - name: postgres
+          image: <span class="placeholder">&lt;POSTGRES_IMAGE&gt;</span>
+          ports:
+            - containerPort: <span class="placeholder">&lt;PORT&gt;</span>
+              name: postgres
+          env:
+            - name: POSTGRES_DB
+              value: <span class="placeholder">&lt;DB_NAME&gt;</span>
+            - name: POSTGRES_USER
+              value: <span class="placeholder">&lt;DB_USER&gt;</span>
+            - name: POSTGRES_PASSWORD
+              value: <span class="placeholder">&lt;DB_PASSWORD&gt;</span>
+          resources:
+            requests:
+              cpu: <span class="placeholder">&lt;CPU_REQUEST&gt;</span>
+              memory: <span class="placeholder">&lt;MEM_REQUEST&gt;</span>
+            limits:
+              cpu: <span class="placeholder">&lt;CPU_LIMIT&gt;</span>
+              memory: <span class="placeholder">&lt;MEM_LIMIT&gt;</span>
+          volumeMounts:
+            - name: postgres-data
+              mountPath: <span class="placeholder">&lt;DATA_DIR&gt;</span>
+      volumes:
+        - name: postgres-data
+          persistentVolumeClaim:
+            claimName: <span class="placeholder">&lt;PVC_NAME&gt;</span></code></pre>
+      <div class="hints-section">
+        <button class="hint-toggle" aria-expanded="false" onclick="toggleHint(this)">Hint 1: Image</button>
+        <div class="hint-content">Use <code>postgres:15-alpine</code> for a lightweight PostgreSQL 15 image.</div>
+        <button class="hint-toggle" aria-expanded="false" onclick="toggleHint(this)">Hint 2: Data mount path</button>
+        <div class="hint-content">PostgreSQL stores data at <code>/var/lib/postgresql/data</code>. Mount your PVC there.</div>
+        <button class="hint-toggle" aria-expanded="false" onclick="toggleHint(this)">Hint 3: Environment values</button>
+        <div class="hint-content">The env values must match what the backend expects: <code>POSTGRES_DB: workshop</code>, <code>POSTGRES_USER: workshop</code>, <code>POSTGRES_PASSWORD: workshop123</code>.</div>
+      </div>
+    </section>
+
+    <!-- Task 6: Database Service (ClusterIP) -->
+    <section class="task">
+      <div class="task-header">
+        <span class="task-number">Task 6</span>
+        <h2>Database Service (ClusterIP)</h2>
+      </div>
+      <p class="task-description">Create a <strong>Service</strong> of type <strong>ClusterIP</strong> for the <strong>PostgreSQL database</strong>. The backend Deployment references this service by name as its <code>DB_HOST</code>, so the name must match exactly.</p>
+      <pre><code>apiVersion: v1
+kind: Service
+metadata:
+  name: <span class="placeholder">&lt;SERVICE_NAME&gt;</span>
+  labels:
+    app: workshop
+    component: postgres
+spec:
+  type: <span class="placeholder">&lt;SERVICE_TYPE&gt;</span>
+  selector:
+    app: <span class="placeholder">&lt;???&gt;</span>
+    component: <span class="placeholder">&lt;???&gt;</span>
+  ports:
+    - name: postgres
+      port: <span class="placeholder">&lt;SERVICE_PORT&gt;</span>
+      targetPort: <span class="placeholder">&lt;TARGET_PORT&gt;</span>
+      protocol: TCP</code></pre>
+      <div class="hints-section">
+        <button class="hint-toggle" aria-expanded="false" onclick="toggleHint(this)">Hint 1: Service name</button>
+        <div class="hint-content">Name it <code>postgres-service</code> — this must match the <code>DB_HOST</code> environment variable in the backend Deployment.</div>
+        <button class="hint-toggle" aria-expanded="false" onclick="toggleHint(this)">Hint 2: Port</button>
+        <div class="hint-content">PostgreSQL uses port <code>5432</code>. Set both <code>port</code> and <code>targetPort</code> to <code>5432</code>.</div>
+      </div>
+    </section>
+
+    <!-- Task 7: HPA for Backend -->
+    <section class="task">
+      <div class="task-header">
+        <span class="task-number">Task 7</span>
+        <h2>Horizontal Pod Autoscaler for Backend</h2>
+      </div>
+      <p class="task-description">Create a <strong>HorizontalPodAutoscaler</strong> (HPA) resource that automatically scales the <strong>backend</strong> Deployment based on CPU utilization. This ensures the backend can handle traffic spikes.</p>
+      <pre><code>apiVersion: <span class="placeholder">&lt;API_VERSION&gt;</span>
+kind: HorizontalPodAutoscaler
+metadata:
+  name: backend-hpa
+  labels:
+    app: workshop
+    component: backend
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: <span class="placeholder">&lt;TARGET_KIND&gt;</span>
+    name: <span class="placeholder">&lt;TARGET_NAME&gt;</span>
+  minReplicas: <span class="placeholder">&lt;MIN&gt;</span>
+  maxReplicas: <span class="placeholder">&lt;MAX&gt;</span>
+  metrics:
+    - type: <span class="placeholder">&lt;METRIC_TYPE&gt;</span>
+      resource:
+        name: <span class="placeholder">&lt;RESOURCE_NAME&gt;</span>
+        target:
+          type: <span class="placeholder">&lt;TARGET_TYPE&gt;</span>
+          averageUtilization: <span class="placeholder">&lt;THRESHOLD&gt;</span></code></pre>
+      <div class="hints-section">
+        <button class="hint-toggle" aria-expanded="false" onclick="toggleHint(this)">Hint 1: API version</button>
+        <div class="hint-content">Use <code>autoscaling/v2</code> for K3s compatibility. This version supports the metrics array syntax.</div>
+        <button class="hint-toggle" aria-expanded="false" onclick="toggleHint(this)">Hint 2: Scale target</button>
+        <div class="hint-content">Set <code>kind: Deployment</code> and <code>name: backend</code> to reference your backend Deployment.</div>
+        <button class="hint-toggle" aria-expanded="false" onclick="toggleHint(this)">Hint 3: Metrics configuration</button>
+        <div class="hint-content">Use type <code>Resource</code>, resource name <code>cpu</code>, target type <code>Utilization</code>, and set <code>averageUtilization: 70</code>. Scale between 1 and 5 replicas.</div>
+      </div>
+    </section>
+
+    <!-- Task 8: PV and PVC (Optional) -->
+    <section class="task">
+      <div class="task-header">
+        <span class="task-number">Task 8</span>
+        <h2>PersistentVolume and PersistentVolumeClaim</h2>
+        <span class="optional-badge">OPTIONAL</span>
+      </div>
+      <p class="task-description">Create a <strong>PersistentVolume</strong> (PV) using a local <code>hostPath</code> and a matching <strong>PersistentVolumeClaim</strong> (PVC) for the <strong>PostgreSQL database</strong>. This gives the database durable storage that survives pod restarts.</p>
+      <div class="note">These resources are optional. Without them, database data is lost if the pod restarts. The PVC name here must match the <code>claimName</code> you used in Task 5.</div>
+      <h3>PersistentVolume</h3>
+      <pre><code>apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: <span class="placeholder">&lt;PV_NAME&gt;</span>
+  labels:
+    app: workshop
+    component: postgres
+spec:
+  storageClassName: <span class="placeholder">&lt;STORAGE_CLASS&gt;</span>
+  capacity:
+    storage: <span class="placeholder">&lt;CAPACITY&gt;</span>
+  accessModes:
+    - <span class="placeholder">&lt;ACCESS_MODE&gt;</span>
+  hostPath:
+    path: <span class="placeholder">&lt;HOST_DIRECTORY&gt;</span></code></pre>
+      <h3>PersistentVolumeClaim</h3>
+      <pre><code>apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: <span class="placeholder">&lt;PVC_NAME&gt;</span>
+  labels:
+    app: workshop
+    component: postgres
+spec:
+  storageClassName: <span class="placeholder">&lt;STORAGE_CLASS&gt;</span>
+  accessModes:
+    - <span class="placeholder">&lt;ACCESS_MODE&gt;</span>
+  resources:
+    requests:
+      storage: <span class="placeholder">&lt;REQUESTED_STORAGE&gt;</span></code></pre>
+      <div class="hints-section">
+        <button class="hint-toggle" aria-expanded="false" onclick="toggleHint(this)">Hint 1: Storage class</button>
+        <div class="hint-content">Use <code>storageClassName: manual</code> on both the PV and PVC so they bind to each other.</div>
+        <button class="hint-toggle" aria-expanded="false" onclick="toggleHint(this)">Hint 2: Capacity and access mode</button>
+        <div class="hint-content">Set capacity to <code>1Gi</code> and access mode to <code>ReadWriteOnce</code>. The PVC request should not exceed the PV capacity.</div>
+        <button class="hint-toggle" aria-expanded="false" onclick="toggleHint(this)">Hint 3: Host path</button>
+        <div class="hint-content">Use a path like <code>/data/workshop-postgres</code> for the hostPath. Name the PVC <code>postgres-pvc</code> to match the Deployment volume reference.</div>
+      </div>
+    </section>
+
+    <footer>
+      <p>Kubernetes Workshop &mdash; Deploy a full-stack application on K3s</p>
+    </footer>
+  </div>
+
+  <script>
+    function toggleHint(button) {
+      var content = button.nextElementSibling;
+      var isVisible = content.classList.contains('visible');
+
+      if (isVisible) {
+        content.classList.remove('visible');
+        button.setAttribute('aria-expanded', 'false');
+      } else {
+        content.classList.add('visible');
+        button.setAttribute('aria-expanded', 'true');
+      }
+    }
+  </script>
+</body>
+</html>
