@@ -1,15 +1,11 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: postgres-pvcsss
-  namespace: default
-  labels:
-    app: workshop
-    component: db
+  name: postgres-pvc
 spec:
-  storageClassName: local-path
   accessModes:
     - ReadWriteOnce
+  storageClassName: local-path
   resources:
     requests:
       storage: 1Gi
