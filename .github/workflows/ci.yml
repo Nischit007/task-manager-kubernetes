@@ -85,12 +85,12 @@ jobs:
           - name: backend
             context: ./backend
             dockerfile: ./backend/Dockerfile
-            image: BACKEND_IMAGE
+            image: nischit007/task-manager-backend
 
           - name: frontend
             context: ./frontend
             dockerfile: ./frontend/Dockerfile
-            image: FRONTEND_IMAGE
+            image: nischit007/task-manager-frontend
 
     steps:
       - name: Checkout repository
