@@ -6,14 +6,15 @@ import path from 'path';
 const k8sDir = path.resolve(__dirname, '../../../k8s');
 
 const manifestFiles = [
-  'backend-deployment.yaml',
-  'backend-service.yaml',
-  'frontend-deployment.yaml',
-  'frontend-service.yaml',
-  'db-deployment.yaml',
-  'db-service.yaml',
-  'backend-hpa.yaml',
+  'backend-deployment.yml',
+  'backend-service.yml',
+  'frontend-deployment.yml',
+  'frontend-service.yml',
+  'db-deployment.yml',
+  'db-service.yml',
+  'backend-hpa.yml',
   'db-persistentVolumeClaim.yml',
+  'db-persistentVolume.yml',
 ];
 
 /**
@@ -96,7 +97,7 @@ describe('Service name and DNS hostname consistency', () => {
   it('DB_HOST env var references an existing Service name', () => {
     // Find DB_HOST in backend deployment
     const backendDep = deployments.find(
-      ({ doc }) => doc.metadata.name === 'backend'
+      ({ doc }) => doc.metadata.name === 'backend-task-manager'
     );
     expect(backendDep).toBeDefined();
 
@@ -117,7 +118,7 @@ describe('Service name and DNS hostname consistency', () => {
   it('BACKEND_URL env var references an existing Service name', () => {
     // Find BACKEND_URL in frontend deployment
     const frontendDep = deployments.find(
-      ({ doc }) => doc.metadata.name === 'frontend'
+      ({ doc }) => doc.metadata.name === 'frontend-task'
     );
     expect(frontendDep).toBeDefined();
 
@@ -175,7 +176,7 @@ describe('HPA configuration', () => {
 
     expect(hpa.apiVersion).toBe('autoscaling/v2');
     expect(hpa.spec.scaleTargetRef.kind).toBe('Deployment');
-    expect(hpa.spec.scaleTargetRef.name).toBe('backend');
+    expect(hpa.spec.scaleTargetRef.name).toBe('backend-task-manager');
     expect(hpa.spec.minReplicas).toBe(1);
     expect(hpa.spec.maxReplicas).toBe(5);
   });
