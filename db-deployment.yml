@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres-task-manager
+  labels: 
+    app: workshop
+    component: db
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: workshop
+      component: db
+  template:
+    metadata:
+      labels:
+        app: workshop
+        component: db
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:15-alpine
+          ports:
+            - containerPort: 5432
+              name: postgres
+          env:
+            - name: POSTGRES_DB
+              value: postgres
+            - name: POSTGRES_USER
+              value: postgres-user
+            - name: POSTGRES_PASSWORD
+              value: postgres123
+          resources:
+            requests:
+              cpu: '100m'
+              memory: '128Mi'
+            limits:
+              cpu: '500m'
+              memory: '528Mi'              
+          volumeMounts:
+            - name: postgres-data
+              mountPath: /var/lib/postgresql/data
+      volumes:
+        - name: postgres-data
+          persistentVolumeClaim:
+            claimName: postgres-pvcs

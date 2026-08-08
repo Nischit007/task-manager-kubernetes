@@ -24,6 +24,15 @@ function createApp(deps = {}) {
     next();
   });
 
+    app.get('/check/health', async (req, res) => {
+    try {
+      res.status(200).json({ status: 'ok' });
+    } catch (err) {
+      res.status(500).json({ error:  'Backend not working' });
+    }
+  });
+
+
   // Health check endpoint
   app.get('/health', async (req, res) => {
     try {
@@ -31,7 +40,7 @@ function createApp(deps = {}) {
       client.release();
       res.status(200).json({ status: 'ok' });
     } catch (err) {
-      res.status(503).json({ error: 'Database unavailable' });
+      res.status(503).json({ "err ": err.message });
     }
   });
 
@@ -42,7 +51,7 @@ function createApp(deps = {}) {
   // eslint-disable-next-line no-unused-vars
   app.use((err, req, res, next) => {
     console.error('Unhandled error:', err.message);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ "err ": err.message  });
   });
 
   return app;

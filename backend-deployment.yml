@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend-task-manager
+  labels: 
+    app: workshop
+    component: backend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: workshop
+      component: backend
+  template:
+    metadata:
+      labels:
+        app: workshop
+        component: backend
+    spec:
+      containers:
+        - name: backend
+          image: nischit007/workshop-backend:v2
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3000
+              name: http
+          env:
+            - name: DB_HOST
+              value: task-manager-db-service
+            - name: DB_PORT
+              value : "5432"
+            - name: DB_NAME 
+              value: postgres
+            - name: DB_USER 
+              value: postgres-user
+            - name: DB_PASSWORD 
+              value: postgres123         
+          resources:
+            requests:
+              cpu: '100m'
+              memory: '128Mi'
+            limits:
+              cpu: '500m'
+              memory: '528Mi'              
