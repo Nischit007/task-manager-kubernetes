@@ -10,10 +10,10 @@ const manifestFiles = [
   'backend-service.yaml',
   'frontend-deployment.yaml',
   'frontend-service.yaml',
-  'postgres-deployment.yaml',
-  'postgres-service.yaml',
+  'db-deployment.yaml',
+  'db-service.yaml',
   'backend-hpa.yaml',
-  'storage.yaml',
+  'db-persistentVolumeClaim.yml',
 ];
 
 /**

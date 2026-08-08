@@ -45,30 +45,31 @@ jobs:
 #       - name: Run unit and property tests
 #         run: npm run test
 
-#   manifest-test:
-#     name: Manifest Tests
-#     runs-on: ubuntu-latest
 
-#     defaults:
-#       run:
-#         working-directory: backend
+  manifest-test:
+    name: Manifest Tests
+    runs-on: ubuntu-latest
 
-#     steps:
-#       - name: Checkout repository
-#         uses: actions/checkout@v4
+    defaults:
+      run:
+        working-directory: backend
 
-#       - name: Setup Node.js
-#         uses: actions/setup-node@v4
-#         with:
-#           node-version: "24"
-#           cache: npm
-#           cache-dependency-path: backend/package-lock.json
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-#       - name: Install dependencies
-#         run: npm ci
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
 
-#       - name: Run manifest tests
-#         run: npm run test:manifests
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run manifest tests
+        run: npm run test:manifests
 
 
   build:
